@@ -1,3 +1,4 @@
+import 'package:air_track_app/view/home/authentication/contactus_view.dart';
 import 'package:air_track_app/view/home/authentication/forgot_password_view.dart';
 import 'package:air_track_app/view/home/authentication/sign_in_view.dart';
 import 'package:air_track_app/view/home/authentication/sign_up_view.dart';
@@ -11,6 +12,7 @@ class AppRoutes {
   static const String signupview = "/signupview";
   static const String signinview = "/signinview";
   static const String forgotpassword = "/forgotpasswordview";
+  static const String contactusview = "/contactusview";
 }
 
 class RouteGenerator {
@@ -26,6 +28,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => SignInView());
       case AppRoutes.forgotpassword:
         return MaterialPageRoute(builder: (_) => ForgotPasswordView());
+      case AppRoutes.contactusview:
+        return MaterialPageRoute(builder: (_) => ContactusView());
       default:
         return MaterialPageRoute(
           builder: (_) =>

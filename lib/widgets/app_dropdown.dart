@@ -20,8 +20,8 @@ class _AppDropdownState extends State<AppDropdown> {
     return DropdownButtonHideUnderline(
       child: DropdownButton<String>(
         value: selectedValue,
-
         icon: Icon(Icons.arrow_drop_down, color: black),
+        hint: const Text(''), // <--- hide default label
         items: widget.items
             .map(
               (value) =>

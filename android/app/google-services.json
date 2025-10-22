@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "419569247027",
+    "project_id": "air-track-a2756",
+    "storage_bucket": "air-track-a2756.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:419569247027:android:308697beaa227d15e0d446",
+        "android_client_info": {
+          "package_name": "com.example.air_track_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_TPDb_TXC5Kw5rKryWLefKQF9LtczuDs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

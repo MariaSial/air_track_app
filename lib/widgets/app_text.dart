@@ -6,6 +6,10 @@ String signin = "Sign In";
 String contactus = "Contact Us";
 String forgot = "Forgot Password";
 String send = "Send";
+String contactno = "92 (91) 9210263";
+String contactemail = "dgepakp@epakp.gov.pk";
+String location =
+    "3rd Floor, SDU Building, Gate No. 05, Khyber Road Peshawar Cantt. Khyber Pakhtunkhwa, Pakistan, 25000";
 
 List<String> cities = [
   'Peshawar',

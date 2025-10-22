@@ -1,14 +1,16 @@
+// SignInView with Firestore credential check
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:air_track_app/widgets/app_images.dart';
 import 'package:air_track_app/widgets/app_routes.dart';
 import 'package:air_track_app/widgets/app_scaffold.dart';
 import 'package:air_track_app/widgets/app_text.dart';
-
 import 'package:air_track_app/widgets/app_text_field.dart';
 import 'package:air_track_app/widgets/app_textstyle.dart';
 import 'package:air_track_app/widgets/blue_button.dart';
 import 'package:air_track_app/widgets/white_text_button.dart';
-import 'package:flutter/material.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -26,6 +28,8 @@ class _SignInViewState extends State<SignInView> {
   bool isPasswordVisible = false;
   bool isLoading = false;
 
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
@@ -40,33 +44,73 @@ class _SignInViewState extends State<SignInView> {
     super.dispose();
   }
 
-  Future<void> _tryLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+  // Put this inside your SignInView State class (e.g. _SignInViewState)
+  Future<void> _signInWithCnicAndPassword(
+    String cnicInput,
+    String password,
+  ) async {
+    final cnic = cnicInput.replaceAll(RegExp(r'\D'), '');
+    if (cnic.length != 13) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid 13-digit CNIC')),
+      );
+      return;
+    }
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter password')));
       return;
     }
 
-    final cnic = cnicController.text.trim();
-    final password = passwordController.text;
+    try {
+      // find user doc with this CNIC
+      final q = await FirebaseFirestore.instance
+          .collection('users')
+          .where('cnic', isEqualTo: cnic)
+          .limit(1)
+          .get();
 
-    setState(() => isLoading = true);
+      if (q.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No account found for this CNIC')),
+        );
+        return;
+      }
 
-    await Future.delayed(const Duration(seconds: 1));
+      final data = q.docs.first.data();
+      final email = (data['email'] ?? '') as String;
+      if (email.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account does not have an email linked'),
+          ),
+        );
+        return;
+      }
 
-    setState(() => isLoading = false);
+      // sign in with email + password (Firebase)
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    const mockValidCnic = '1234567890123';
-    const mockValidPassword = 'flutter123';
-
-    if (cnic == mockValidCnic && password == mockValidPassword) {
-      ScaffoldMessenger.of(
-        // ignore: use_build_context_synchronously
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login successful')));
-    } else {
-      ScaffoldMessenger.of(
-        // ignore: use_build_context_synchronously
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Invalid CNIC or password')));
+      // on success navigate to home/contactus etc.
+      if (mounted)
+        Navigator.pushReplacementNamed(context, AppRoutes.contactusview);
+    } on FirebaseAuthException catch (e) {
+      String msg = e.message ?? 'Authentication failed';
+      if (e.code == 'wrong-password') msg = 'Incorrect password';
+      if (e.code == 'user-not-found') msg = 'No user found with that email';
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
@@ -81,25 +125,22 @@ class _SignInViewState extends State<SignInView> {
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-
                 children: [
                   Image.asset(logo),
                   const SizedBox(height: 12),
                   Text(signin, style: blueButtonStyle.copyWith(color: black)),
                   const SizedBox(height: 20),
-
                   AppTextField(
                     controller: cnicController,
-                    hintText: "CNIC ",
+                    hintText: "CNIC",
                     keyboardType: TextInputType.number,
                     maxLength: 13,
                   ),
-
                   AppTextField(
                     controller: passwordController,
-                    hintText: "Password ",
+                    hintText: "Password",
                     obscureText: !isPasswordVisible,
-
+                    maxLines: 1,
                     suffixIcon: IconButton(
                       icon: Icon(
                         isPasswordVisible
@@ -111,9 +152,7 @@ class _SignInViewState extends State<SignInView> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   WhiteTextButton(
                     text: forgot,
                     onPressed: () {
@@ -127,7 +166,7 @@ class _SignInViewState extends State<SignInView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("Don't Have an Account?"),
+                      const Text("Don't Have an Account?"),
                       WhiteTextButton(
                         text: signup,
                         onPressed: () {
@@ -139,13 +178,26 @@ class _SignInViewState extends State<SignInView> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 14),
                   BlueButton(
                     text: isLoading ? 'Please wait...' : 'Sign In',
-                    onPressed: isLoading ? () {} : _tryLogin,
+                    onPressed: () {
+                      _signInWithCnicAndPassword(
+                        cnicController.text.trim(),
+                        passwordController.text,
+                      );
+                    },
                   ),
-                  WhiteTextButton(text: contactus, onPressed: () {}),
+                  const SizedBox(height: 10),
+                  WhiteTextButton(
+                    text: contactus,
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.contactusview,
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

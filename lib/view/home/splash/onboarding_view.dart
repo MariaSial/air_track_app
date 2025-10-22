@@ -24,13 +24,14 @@ class _OnboardingViewState extends State<OnboardingView> {
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text("Welcome To", style: onBoardingstyle),
               SizedBox(height: 14),
               Image.asset(logo),
               SizedBox(height: 14),
-              Text(appName.toUpperCase(), style: appHeading),
-              Text(province.toUpperCase(), style: appProvince),
+              Center(child: Text(appName.toUpperCase(), style: appHeading)),
+              Center(child: Text(province.toUpperCase(), style: appProvince)),
               SizedBox(height: 14),
               BlueButton(
                 text: signup,
