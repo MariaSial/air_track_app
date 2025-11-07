@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:air_track_app/model/air_quality_model.dart';
+import 'package:air_track_app/widgets/app_text.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 
 class AirQualityService {
-  static const String _apiKey = 'd15786f90afa8a53fc782e0f4520aa2d';
+  static final String _apiKey = key;
   static const String _geoUrl = 'http://api.openweathermap.org/geo/1.0/direct';
 
   // ⚠️ IMPORTANT: Update this with your actual API base URL
