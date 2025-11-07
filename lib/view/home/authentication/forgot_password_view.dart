@@ -1,6 +1,5 @@
-// paste into lib/view/home/authentication/forgot_password_view.dart
+import 'package:air_track_app/services/forget_password_service.dart';
 import 'package:air_track_app/widgets/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:air_track_app/widgets/app_images.dart';
 import 'package:air_track_app/widgets/app_scaffold.dart';
@@ -22,6 +21,11 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController emailController;
   bool isLoading = false;
+
+  // Update baseUrl to your API host (or inject the service instead)
+  final ForgetPasswordApiService _api = ForgetPasswordApiService(
+    baseUrl: 'https://testproject.famzhost.com/api/v1',
+  );
 
   @override
   void initState() {
@@ -57,7 +61,9 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     setState(() => isLoading = true);
 
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      // Call your API: POST /forgot-password
+      await _api.sendForgotPassword(email);
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -67,17 +73,13 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
       await Future.delayed(const Duration(milliseconds: 800));
       if (mounted)
         Navigator.pushReplacementNamed(context, AppRoutes.signinview);
-    } on FirebaseAuthException catch (e) {
-      final message = e.message ?? 'Failed to send reset email';
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      final message = e.toString().replaceFirst('Exception: ', '');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => isLoading = false);
     }

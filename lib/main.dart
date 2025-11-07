@@ -1,3 +1,4 @@
+import 'package:air_track_app/view/aqi_analytics/aqi_analytics_view.dart';
 import 'package:air_track_app/widgets/app_routes.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -33,7 +34,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      // home: const SplashView(),
+      home: AqiAnalyticsView(),
       initialRoute: AppRoutes.splash, // Start from Splash Screen
       onGenerateRoute: RouteGenerator.generateRoute,
     );

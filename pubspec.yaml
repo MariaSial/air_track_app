@@ -38,6 +38,10 @@ dependencies:
   firebase_auth: ^6.1.1
   cloud_firestore: ^6.0.3
   crypto: ^3.0.6
+  http: ^1.5.0
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  flutter_secure_storage: ^9.2.4
 
 dev_dependencies:
   flutter_test:
@@ -66,7 +70,9 @@ flutter:
     - assets/images/logo.png
     - assets/images/background.jpg
     - assets/images/splash.jpg
-
+    - assets/images/cfplogo.png
+    - assets/images/kpitblogo.png
+    - assets/images/reportcard.png
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

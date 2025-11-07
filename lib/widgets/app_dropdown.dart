@@ -19,6 +19,7 @@ class _AppDropdownState extends State<AppDropdown> {
   Widget build(BuildContext context) {
     return DropdownButtonHideUnderline(
       child: DropdownButton<String>(
+        padding: EdgeInsets.symmetric(horizontal: 8),
         value: selectedValue,
         icon: Icon(Icons.arrow_drop_down, color: black),
         hint: const Text(''), // <--- hide default label

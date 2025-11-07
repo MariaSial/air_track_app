@@ -3,6 +3,7 @@ import 'package:air_track_app/widgets/app_text.dart';
 import 'package:air_track_app/widgets/app_textstyle.dart';
 import 'package:air_track_app/widgets/blue_button.dart';
 import 'package:air_track_app/widgets/app_routes.dart';
+import 'package:air_track_app/widgets/powerdby.dart';
 import 'package:air_track_app/widgets/white_text_button.dart';
 import 'package:flutter/material.dart';
 
@@ -31,7 +32,13 @@ class _OnboardingViewState extends State<OnboardingView> {
               Image.asset(logo),
               SizedBox(height: 14),
               Center(child: Text(appName.toUpperCase(), style: appHeading)),
-              Center(child: Text(province.toUpperCase(), style: appProvince)),
+              Center(
+                child: Text(
+                  province.toUpperCase(),
+                  style: appProvince,
+                  textAlign: TextAlign.center,
+                ),
+              ),
               SizedBox(height: 14),
               BlueButton(
                 text: signup,
@@ -56,6 +63,8 @@ class _OnboardingViewState extends State<OnboardingView> {
                   ),
                 ],
               ),
+              SizedBox(height: 20),
+              Powerdby(),
             ],
           ),
         ),

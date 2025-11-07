@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class BlueButton extends StatefulWidget {
   String text;
-  VoidCallback onPressed;
+  VoidCallback? onPressed;
   BlueButton({required this.text, required this.onPressed, super.key});
 
   @override

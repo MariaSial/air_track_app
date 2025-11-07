@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.example.air_track_app"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
@@ -17,6 +17,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+       
     }
 
     compileOptions {

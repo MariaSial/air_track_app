@@ -37,7 +37,13 @@ class _SplashViewState extends State<SplashView> {
               Image.asset(logo),
               const SizedBox(height: 14),
               Center(child: Text(appName.toUpperCase(), style: appHeading)),
-              Center(child: Text(province.toUpperCase(), style: appProvince)),
+              Center(
+                child: Text(
+                  province.toUpperCase(),
+                  style: appProvince,
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ],
           ),
         ),

@@ -1,9 +1,12 @@
+import 'package:air_track_app/view/aqi_analytics/aqi_analytics_view.dart';
 import 'package:air_track_app/view/home/authentication/contactus_view.dart';
 import 'package:air_track_app/view/home/authentication/forgot_password_view.dart';
 import 'package:air_track_app/view/home/authentication/sign_in_view.dart';
 import 'package:air_track_app/view/home/authentication/sign_up_view.dart';
 import 'package:air_track_app/view/home/splash/onboarding_view.dart';
 import 'package:air_track_app/view/home/splash/splash_view.dart';
+import 'package:air_track_app/view/notifications/notification_view.dart';
+import 'package:air_track_app/view/report_status/reports_view.dart';
 import 'package:flutter/material.dart';
 
 class AppRoutes {
@@ -13,6 +16,9 @@ class AppRoutes {
   static const String signinview = "/signinview";
   static const String forgotpassword = "/forgotpasswordview";
   static const String contactusview = "/contactusview";
+  static const String aqianalyticsview = "/aqianalyticsview";
+  static const String reportsview = "/reportsview";
+  static const String notificationview = "/notificationview";
 }
 
 class RouteGenerator {
@@ -30,6 +36,12 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => ForgotPasswordView());
       case AppRoutes.contactusview:
         return MaterialPageRoute(builder: (_) => ContactusView());
+      case AppRoutes.aqianalyticsview:
+        return MaterialPageRoute(builder: (_) => AqiAnalyticsView());
+      case AppRoutes.reportsview:
+        return MaterialPageRoute(builder: (_) => ReportsView());
+      case AppRoutes.notificationview:
+        return MaterialPageRoute(builder: (_) => NotificationView());
       default:
         return MaterialPageRoute(
           builder: (_) =>
