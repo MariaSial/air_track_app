@@ -10,6 +10,20 @@ class NotificationDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // If the API returned expanded report in notification['data']['report'] or notification['report']
+    final report =
+        (notification['data'] is Map && notification['data']['report'] != null)
+        ? notification['data']['report'] as Map<String, dynamic>
+        : (notification['report'] is Map
+              ? notification['report'] as Map<String, dynamic>
+              : null);
+
+    final imageUrl = notification['image'] ?? report?['image_url'];
+
+    final title =
+        notification['title'] ?? notification['message'] ?? 'Notification';
+    final message = notification['message'] ?? '';
+
     return Scaffold(
       body: AppScaffold(
         child: SafeArea(
@@ -25,21 +39,25 @@ class NotificationDetailView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // --- Image Section ---
+                      // image (network if provided, else asset)
                       Center(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
-                          child: Image.asset(
-                            reportcard,
-                            // height: 200,
-                            // width: double.infinity,
-                            // fit: BoxFit.cover,
-                          ),
+                          child: imageUrl != null
+                              ? Image.network(
+                                  imageUrl.toString(),
+                                  height: 200,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      Image.asset(reportcard),
+                                )
+                              : Image.asset(reportcard),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // --- Message Card ---
+                      // Title & message
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -49,49 +67,46 @@ class NotificationDetailView extends StatelessWidget {
                             BoxShadow(
                               color: Colors.grey.withOpacity(0.2),
                               blurRadius: 8,
-                              offset: const Offset(0, 4),
+                              offset: Offset(0, 4),
                             ),
                           ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Dear Citizen,",
-                              style: TextStyle(
+                            Text(
+                              title,
+                              style: const TextStyle(
                                 fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
-                              "Thank you for reporting and being a responsible citizen.",
-                              style: TextStyle(fontSize: 16, height: 1.4),
+                            Text(
+                              message,
+                              style: const TextStyle(fontSize: 16, height: 1.4),
                             ),
                             const SizedBox(height: 12),
-                            RichText(
-                              text: TextSpan(
+
+                            // If report exists, show some report fields
+                            if (report != null) ...[
+                              const Divider(),
+                              Text(
+                                'Report details',
                                 style: const TextStyle(
-                                  color: Colors.black,
                                   fontSize: 16,
-                                  height: 1.4,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                children: [
-                                  const TextSpan(text: "Your report from "),
-                                  TextSpan(
-                                    text: "DI Khan ",
-                                    style: const TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const TextSpan(
-                                    text:
-                                        "has been accepted. We are taking necessary measures to improve the air quality in your city. Please keep checking the status of your report for further updates.",
-                                  ),
-                                ],
                               ),
-                            ),
+                              const SizedBox(height: 8),
+                              if (report['location'] != null)
+                                Text('Location: ${report['location']}'),
+                              if (report['status'] != null)
+                                Text('Status: ${report['status']}'),
+                              if (report['id'] != null)
+                                Text('Report id: ${report['id']}'),
+                              // show more fields as available
+                            ],
                           ],
                         ),
                       ),

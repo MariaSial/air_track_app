@@ -8,6 +8,7 @@ String forgot = "Forgot Password";
 String send = "Send";
 String contactno = "92 (91) 9210263";
 String contactemail = "dgepakp@epakp.gov.pk";
+String key = 'd15786f90afa8a53fc782e0f4520aa2d';
 String location =
     "3rd Floor, SDU Building, Gate No. 05, Khyber Road Peshawar Cantt. Khyber Pakhtunkhwa, Pakistan, 25000";
 

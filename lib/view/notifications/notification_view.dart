@@ -5,69 +5,84 @@ import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:air_track_app/widgets/app_images.dart';
 import 'package:air_track_app/widgets/app_scaffold.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class NotificationView extends StatefulWidget {
+import 'package:air_track_app/providers/notification_provider.dart';
+
+class NotificationView extends ConsumerStatefulWidget {
   const NotificationView({super.key});
 
   @override
-  State<NotificationView> createState() => _NotificationViewState();
+  ConsumerState<NotificationView> createState() => _NotificationViewState();
 }
 
-class _NotificationViewState extends State<NotificationView> {
-  List<Map<String, dynamic>> notifications = [
-    {
-      "id": 1,
-      "title": "Your report from DI Khan is accepted",
-      "image": "assets/images/fire.jpg",
-      "time": "20m",
-      "isRead": false,
-      "isMuted": false,
-    },
-  ];
+class _NotificationViewState extends ConsumerState<NotificationView> {
+  @override
+  void initState() {
+    super.initState();
+    // initialize provider data after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationProvider).init();
+    });
+  }
 
-  void _onMenuSelected(String value, int index) {
+  Future<void> _refresh() async {
+    await ref.read(notificationProvider).refresh();
+  }
+
+  void _onMenuSelected(String value, int index) async {
+    final provider = ref.read(notificationProvider);
+    final notif = provider.notifications[index];
+
     switch (value) {
       case 'view':
+        if (!notif['isRead']) {
+          await provider.markAsRead(notif['id'], index: index);
+        }
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                NotificationDetailView(notification: notifications[index]),
+            builder: (context) => NotificationDetailView(notification: notif),
           ),
         );
         break;
-
       case 'mute':
-        setState(() {
-          notifications[index]['isMuted'] = true;
-        });
+        provider.muteNotificationAt(index);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Notification muted')));
         break;
-
       case 'delete':
-        setState(() {
-          notifications.removeAt(index);
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Notification deleted')));
+        final success = await provider.deleteNotification(
+          notif['id'],
+          index: index,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'Notification deleted' : 'Failed to delete',
+            ),
+          ),
+        );
         break;
-
       case 'read':
-        setState(() {
-          notifications[index]['isRead'] = true;
-        });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Marked as read')));
+        final success = await provider.markAsRead(notif['id'], index: index);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'Marked as read' : 'Failed to mark as read',
+            ),
+          ),
+        );
         break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = ref.watch(notificationProvider);
+
     return Scaffold(
       body: AppScaffold(
         child: SafeArea(
@@ -75,73 +90,120 @@ class _NotificationViewState extends State<NotificationView> {
             children: [
               AqiAppBar(title: "Notifications"),
               Expanded(
-                child: ListView.builder(
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    final notif = notifications[index];
-                    return Card(
-                      margin: const EdgeInsets.all(10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 2,
-                      child: ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.asset(
-                            reportcard,
-                            // width: 60,
-                            // height: 60,
-                            // fit: BoxFit.cover,
+                child: provider.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : provider.errorMessage != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            provider.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 16, color: red),
                           ),
                         ),
-                        title: Text(
-                          notif['title'],
+                      )
+                    : provider.notifications.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No notifications yet',
                           style: TextStyle(
-                            fontWeight: notif['isRead']
-                                ? FontWeight.normal
-                                : FontWeight.bold,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: black,
                           ),
                         ),
-                        subtitle: Text(notif['time']),
-                        trailing: PopupMenuButton<String>(
-                          icon: Icon(Icons.more_vert, color: black),
-                          color: white, // default popup background
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(color: lightgrey),
-                          ),
-                          onSelected: (value) => _onMenuSelected(value, index),
-                          itemBuilder: (context) => [
-                            _buildPopupItem(
-                              'view',
-                              'View Details',
-                              Icons.description,
-                            ),
-                            _buildPopupItem(
-                              'mute',
-                              'Mute Notification',
-                              Icons.notifications_off,
-                            ),
-                            _buildPopupItem(
-                              'delete',
-                              'Delete Notification',
-                              Icons.delete,
-                            ),
-                            _buildPopupItem('read', 'Mark as Read', Icons.mail),
-                          ],
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _refresh,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: provider.notifications.length,
+                          itemBuilder: (context, index) {
+                            final notif = provider.notifications[index];
+                            return Card(
+                              margin: const EdgeInsets.all(10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 2,
+                              child: ListTile(
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: notif['image'] != null
+                                      ? Image.network(
+                                          notif['image'],
+                                          width: 60,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stack) =>
+                                                  Image.asset(
+                                                    reportcard,
+                                                    width: 60,
+                                                    height: 60,
+                                                  ),
+                                        )
+                                      : Image.asset(
+                                          reportcard,
+                                          width: 60,
+                                          height: 60,
+                                        ),
+                                ),
+                                title: Text(
+                                  notif['title'] ?? 'Notification',
+                                  style: TextStyle(
+                                    fontWeight: notif['isRead']
+                                        ? FontWeight.normal
+                                        : FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(notif['time'] ?? ''),
+                                trailing: PopupMenuButton<String>(
+                                  icon: Icon(Icons.more_vert, color: black),
+                                  color: white,
+                                  elevation: 6,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(color: lightgrey),
+                                  ),
+                                  onSelected: (value) =>
+                                      _onMenuSelected(value, index),
+                                  itemBuilder: (context) => [
+                                    _buildPopupItem(
+                                      'view',
+                                      'View Details',
+                                      Icons.description,
+                                    ),
+                                    _buildPopupItem(
+                                      'mute',
+                                      'Mute Notification',
+                                      Icons.notifications_off,
+                                    ),
+                                    _buildPopupItem(
+                                      'delete',
+                                      'Delete Notification',
+                                      Icons.delete,
+                                    ),
+                                    if (!notif['isRead'])
+                                      _buildPopupItem(
+                                        'read',
+                                        'Mark as Read',
+                                        Icons.mark_email_read,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: AqiBottomNavBar(currentIndex: 3),
+      bottomNavigationBar: const AqiBottomNavBar(currentIndex: 3),
     );
   }
 }
@@ -151,7 +213,7 @@ PopupMenuItem<String> _buildPopupItem(
   String label,
   IconData icon,
 ) {
-  bool isHovered = false; // ✅ Move here (outside builder)
+  bool isHovered = false;
   return PopupMenuItem<String>(
     value: value,
     padding: EdgeInsets.zero,
@@ -164,9 +226,7 @@ PopupMenuItem<String> _buildPopupItem(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
             decoration: BoxDecoration(
-              color: isHovered
-                  ? darkgrey // ✅ Dark Red Hover
-                  : white,
+              color: isHovered ? darkgrey : white,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(

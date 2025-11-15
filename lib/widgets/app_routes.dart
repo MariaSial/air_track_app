@@ -1,10 +1,10 @@
 import 'package:air_track_app/view/aqi_analytics/aqi_analytics_view.dart';
-import 'package:air_track_app/view/home/authentication/contactus_view.dart';
-import 'package:air_track_app/view/home/authentication/forgot_password_view.dart';
-import 'package:air_track_app/view/home/authentication/sign_in_view.dart';
-import 'package:air_track_app/view/home/authentication/sign_up_view.dart';
-import 'package:air_track_app/view/home/splash/onboarding_view.dart';
-import 'package:air_track_app/view/home/splash/splash_view.dart';
+import 'package:air_track_app/view/authentication/contactus_view.dart';
+import 'package:air_track_app/view/authentication/forgot_password_view.dart';
+import 'package:air_track_app/view/authentication/sign_in_view.dart';
+import 'package:air_track_app/view/authentication/sign_up_view.dart';
+import 'package:air_track_app/view/splash/onboarding_view.dart';
+import 'package:air_track_app/view/splash/splash_view.dart';
 import 'package:air_track_app/view/notifications/notification_view.dart';
 import 'package:air_track_app/view/report_status/reports_view.dart';
 import 'package:flutter/material.dart';

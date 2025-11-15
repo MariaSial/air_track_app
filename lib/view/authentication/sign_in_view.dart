@@ -10,6 +10,7 @@ import 'package:air_track_app/widgets/app_scaffold.dart';
 import 'package:air_track_app/widgets/app_text_field.dart';
 import 'package:air_track_app/widgets/blue_button.dart';
 import 'package:air_track_app/widgets/white_text_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -57,6 +58,10 @@ class _SignInViewState extends State<SignInView> {
       final token = await _api.loginWithEmail(email, password);
       // ✅ Save token once after login
       await AuthStorage.saveToken(token);
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('token', token);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

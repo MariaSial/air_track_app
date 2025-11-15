@@ -22,7 +22,6 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
   late final TextEditingController emailController;
   bool isLoading = false;
 
-  // Update baseUrl to your API host (or inject the service instead)
   final ForgetPasswordApiService _api = ForgetPasswordApiService(
     baseUrl: 'https://testproject.famzhost.com/api/v1',
   );
@@ -39,8 +38,29 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     super.dispose();
   }
 
+  // New: service unavailable popup
+  Future<void> _showServiceUnavailablePopup() async {
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Service Unavailable'),
+        content: const Text(
+          'Password reset service is unavailable for now. Please try again later.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('OK', style: TextStyle(color: blue)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _sendResetEmail() async {
-    if (!(_formKey.currentState?.validate() ?? true)) return;
+    // Ensure formState.validate returns false if form state is null
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final email = emailController.text.trim();
     if (email.isEmpty) {
@@ -58,23 +78,39 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
       return;
     }
 
+    // Show "service unavailable" popup instead of calling API.
+    // The real API call is left below, commented out so you can re-enable it later.
+
+    await _showServiceUnavailablePopup();
+    return;
+
+    // --- Uncomment this block to re-enable API call when service is available ---
+    /*
     setState(() => isLoading = true);
 
     try {
-      // Call your API: POST /forgot-password
-      await _api.sendForgotPassword(email);
+      // Now the service returns the API message
+      final message = await _api.sendForgotPassword(email);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password reset email sent. Check your inbox.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+
+      // Optionally delay so user sees the message
       await Future.delayed(const Duration(milliseconds: 800));
-      if (mounted)
+      if (mounted) {
         Navigator.pushReplacementNamed(context, AppRoutes.signinview);
+      }
     } catch (e) {
-      final message = e.toString().replaceFirst('Exception: ', '');
+      // Prefer showing the exception message when available
+      String message = 'Something went wrong';
+      if (e is ForgotPasswordException) {
+        message = e.message;
+      } else {
+        message = e.toString();
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.red),
@@ -83,6 +119,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
+    */
   }
 
   @override

@@ -1,4 +1,5 @@
 // sign_up_view_api.dart
+import 'package:air_track_app/services/signin_service.dart';
 import 'package:air_track_app/services/signup_service.dart';
 import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -100,26 +101,46 @@ class _SignUpViewState extends State<SignUpView> {
         cnic: cnic,
       );
 
-      // On success, resp likely contains message and user object
+      // On success
       final message = resp['message']?.toString() ?? 'Registration successful';
-
       if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
 
-      // Optionally: if API returns token, store it here
+      // If backend returns token you can save it here
       // final token = resp['token'];
 
-      // Navigate to contact us (matching your original behavior)
       Navigator.pushReplacementNamed(context, AppRoutes.contactusview);
+    } on ApiException catch (e) {
+      // 👇 Custom handling for common cases
+      String displayMessage = e.message;
+
+      if (e.statusCode == 409 ||
+          e.statusCode == 422 ||
+          e.message.contains('email')) {
+        displayMessage =
+            'This email is already registered. Please use another one.';
+      } else if (e.statusCode == 400) {
+        displayMessage = 'Invalid input. Please check your details.';
+      } else if (e.statusCode == 500) {
+        displayMessage = 'Server error. Please try again later.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ $displayMessage'), backgroundColor: red),
+        );
+      }
     } catch (e) {
+      // Fallback for unexpected errors
       final err = e.toString();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Registration failed: $err'),
-            backgroundColor: Colors.red,
+            backgroundColor: red,
           ),
         );
       }
@@ -171,13 +192,47 @@ class _SignUpViewState extends State<SignUpView> {
 
                 AppTextField(
                   controller: cnicController,
-                  hintText: "CNIC (13 digits)",
+                  hintText: "CNIC (XXXXX-XXXXXXX-X)",
                   keyboardType: TextInputType.number,
-                  maxLength: 13,
+                  maxLength: 15, // includes hyphens
+                  onChanged: (value) {
+                    String digits = value.replaceAll(
+                      RegExp(r'\D'),
+                      '',
+                    ); // remove all non-digits
+
+                    String formatted = "";
+                    if (digits.length >= 1) {
+                      formatted = digits.substring(
+                        0,
+                        digits.length.clamp(0, 5),
+                      );
+                    }
+                    if (digits.length > 5) {
+                      formatted +=
+                          "-" + digits.substring(5, digits.length.clamp(5, 12));
+                    }
+                    if (digits.length > 12) {
+                      formatted +=
+                          "-" +
+                          digits.substring(12, digits.length.clamp(12, 13));
+                    }
+
+                    // Prevent infinite loop by updating only when different
+                    if (formatted != cnicController.text) {
+                      cnicController.value = TextEditingValue(
+                        text: formatted,
+                        selection: TextSelection.collapsed(
+                          offset: formatted.length,
+                        ),
+                      );
+                    }
+                  },
                   validator: (v) {
-                    final digitsOnly = v?.replaceAll(RegExp(r'\D'), '') ?? '';
-                    if (digitsOnly.length != 13)
-                      return 'CNIC must be exactly 13 digits';
+                    final onlyDigits = v?.replaceAll(RegExp(r'\D'), '') ?? '';
+                    if (onlyDigits.length != 13) {
+                      return 'CNIC must be 13 digits (XXXXX-XXXXXXX-X)';
+                    }
                     return null;
                   },
                 ),

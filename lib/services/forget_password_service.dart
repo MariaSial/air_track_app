@@ -6,10 +6,9 @@ class ForgetPasswordApiService {
 
   ForgetPasswordApiService({required this.baseUrl});
 
-  /// Send password reset email via API: POST /forgot-password
-  /// Note: This endpoint should NOT require authentication, but if your API requires it,
-  /// you'll need to contact your backend team to fix this.
-  Future<void> sendForgotPassword(String email) async {
+  /// Sends password reset request to POST /forgot-password
+  /// Returns the API message on success.
+  Future<String> sendForgotPassword(String email) async {
     final url = Uri.parse('$baseUrl/forgot-password');
 
     try {
@@ -22,23 +21,38 @@ class ForgetPasswordApiService {
         body: jsonEncode({'email': email}),
       );
 
-      if (response.statusCode == 200) {
-        // Success - password reset email sent
-        return;
-      } else if (response.statusCode == 401) {
-        // Unauthenticated - This is an API design issue
+      final status = response.statusCode;
+      String bodyMessage = 'Password reset request sent.';
+
+      if (response.body.isNotEmpty) {
+        try {
+          final data = jsonDecode(response.body);
+          if (data is Map && data['message'] != null) {
+            bodyMessage = data['message'].toString();
+          } else if (data is String) {
+            bodyMessage = data;
+          }
+        } catch (_) {
+          // ignore parse errors, we'll fall back to raw body
+          if (response.body.isNotEmpty) bodyMessage = response.body;
+        }
+      }
+
+      if (status == 200 || status == 201 || status == 204) {
+        // Success - return message (if any)
+        return bodyMessage;
+      } else if (status == 401) {
         throw ForgotPasswordException(
           'This feature is currently unavailable. Please contact support.',
           statusCode: 401,
         );
-      } else if (response.statusCode == 404) {
-        // Email not found
+      } else if (status == 404) {
         throw ForgotPasswordException(
           'No account found with this email address',
           statusCode: 404,
         );
-      } else if (response.statusCode == 422) {
-        // Validation error
+      } else if (status == 422) {
+        // Validation error: try to extract meaningful error message
         String message = 'Invalid email address';
         try {
           final data = jsonDecode(response.body);
@@ -54,20 +68,15 @@ class ForgetPasswordApiService {
         } catch (_) {}
         throw ForgotPasswordException(message, statusCode: 422);
       } else {
-        // Other errors
+        // other error codes
         String errorMessage = 'Failed to send reset email';
         try {
           final data = jsonDecode(response.body);
           errorMessage = data['message']?.toString() ?? errorMessage;
         } catch (_) {
-          if (response.body.isNotEmpty) {
-            errorMessage = response.body;
-          }
+          if (response.body.isNotEmpty) errorMessage = response.body;
         }
-        throw ForgotPasswordException(
-          errorMessage,
-          statusCode: response.statusCode,
-        );
+        throw ForgotPasswordException(errorMessage, statusCode: status);
       }
     } on ForgotPasswordException {
       rethrow;
@@ -79,7 +88,6 @@ class ForgetPasswordApiService {
   }
 }
 
-/// Custom exception for forgot password errors
 class ForgotPasswordException implements Exception {
   final String message;
   final int? statusCode;

@@ -1,4 +1,4 @@
-import 'package:air_track_app/view/home/authentication/contactus_view.dart';
+import 'package:air_track_app/view/authentication/contactus_view.dart';
 import 'package:air_track_app/widgets/app_routes.dart';
 import 'package:air_track_app/widgets/app_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

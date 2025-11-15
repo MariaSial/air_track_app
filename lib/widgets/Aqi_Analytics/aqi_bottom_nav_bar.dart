@@ -1,6 +1,6 @@
 // lib/widgets/aqi_bottom_nav_bar.dart
-import 'package:air_track_app/view/home/authentication/contactus_view.dart';
-import 'package:air_track_app/view/home/authentication/sign_in_view.dart';
+import 'package:air_track_app/view/authentication/contactus_view.dart';
+import 'package:air_track_app/view/authentication/sign_in_view.dart';
 import 'package:air_track_app/view/notifications/notification_view.dart';
 import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:flutter/material.dart';

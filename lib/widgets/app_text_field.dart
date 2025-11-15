@@ -1,3 +1,4 @@
+import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class AppTextField extends StatelessWidget {
@@ -42,7 +43,7 @@ class AppTextField extends StatelessWidget {
           hintText: hintText,
           counterText: '', // hide the small counter under the field
           filled: true,
-          fillColor: Colors.white,
+          fillColor: white,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 14,
