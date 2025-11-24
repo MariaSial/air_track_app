@@ -41,11 +41,11 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final XFile? image = await _picker.pickImage(
+    final XFile? photo = await _picker.pickImage(
       source: source,
       imageQuality: 85,
     );
-    if (image != null) setState(() => selectedImage = image);
+    if (photo != null) setState(() => selectedImage = photo);
   }
 
   void _showImageOptions() {
@@ -122,7 +122,6 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
 
       // Clear form
       setState(() {
-        const String baseUrl = 'http://10.0.2.2:8000'; // instead of localhost
         nameController.clear();
         descriptionController.clear();
         locationController.clear();
