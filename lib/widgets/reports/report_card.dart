@@ -155,14 +155,31 @@ class ReportCard extends StatelessWidget {
   String _normalize(String raw, String? hostOverride) {
     print('  🔧 Normalizing URL: "$raw"');
 
-    // Handle localhost replacement
+    try {
+      final u = Uri.parse(raw);
+      final host = u.host.toLowerCase();
+      if (host == 'localhost' || host == '127.0.0.1' || host == '::1') {
+        final scheme = u.scheme.isEmpty ? 'http' : u.scheme;
+        final pathAndQuery = '${u.path}${u.hasQuery ? '?${u.query}' : ''}';
+
+        if (hostOverride != null && hostOverride.isNotEmpty) {
+          return '$scheme://$hostOverride$pathAndQuery';
+        } else {
+          // Default emulator host mapping
+          return '$scheme://10.0.2.2$pathAndQuery';
+        }
+      }
+    } catch (_) {
+      // fallthrough to contains check
+    }
+
+    // Fallback simple contains replacement
     if (raw.contains('localhost')) {
       if (hostOverride?.isNotEmpty ?? false) {
         final result = raw.replaceFirst('localhost', hostOverride!);
         print('    → Replaced localhost with override: "$result"');
         return result;
       }
-      // Default: map to Android emulator host
       final result = raw.replaceFirst('localhost', '10.0.2.2');
       print('    → Replaced localhost with emulator IP: "$result"');
       return result;

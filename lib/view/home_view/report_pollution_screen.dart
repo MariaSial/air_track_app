@@ -41,11 +41,32 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final XFile? photo = await _picker.pickImage(
-      source: source,
-      imageQuality: 85,
-    );
-    if (photo != null) setState(() => selectedImage = photo);
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+      if (photo != null) {
+        // Check file size before setting
+        final file = File(photo.path);
+        final size = await file.length();
+
+        if (size > 2 * 1024 * 1024) {
+          if (mounted) {
+            _showSnack(
+              'Image size must not exceed 2 MB. Please choose a smaller image.',
+            );
+          }
+          return;
+        }
+
+        setState(() => selectedImage = photo);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnack('Failed to pick image: ${e.toString()}');
+      }
+    }
   }
 
   void _showImageOptions() {
@@ -75,6 +96,8 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
                 leading: const Icon(Icons.delete),
                 title: const Text('Remove'),
                 onTap: () {
+                  const String baseUrl =
+                      'http://192.168.1.100:8000'; // Replace with your actual IP and port                static const String baseUrl = 'http://192.168.1.100:8000'; // Replace with your actual IP and port
                   Navigator.pop(context);
                   setState(() => selectedImage = null);
                 },
@@ -85,8 +108,16 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
     );
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: isError ? 4 : 3),
+      ),
+    );
   }
 
   Future<void> _submitReport() async {
@@ -130,7 +161,7 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
       });
 
       // Refresh reports provider so it appears immediately
-      ref.read(reportsProvider.notifier).refreshReports();
+      await ref.read(reportsProvider.notifier).refreshReports();
     } catch (e) {
       _showSnack('Error: ${e.toString()}');
     } finally {
@@ -141,6 +172,7 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // resizeToAvoidBottomInset: false,
       body: AppScaffold(
         child: SafeArea(
           child: Column(
@@ -200,9 +232,9 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 selectedImage == null
-                                    ? const Text(
+                                    ? Text(
                                         'Image Upload',
-                                        style: TextStyle(color: Colors.grey),
+                                        style: TextStyle(color: grey),
                                       )
                                     : Expanded(
                                         child: Image.file(
@@ -212,10 +244,7 @@ class _ReportPollutionScreenState extends ConsumerState<ReportPollutionScreen> {
                                         ),
                                       ),
                                 const SizedBox(width: 10),
-                                const Icon(
-                                  Icons.attach_file,
-                                  color: Colors.blue,
-                                ),
+                                Icon(Icons.attach_file, color: blue),
                               ],
                             ),
                           ),

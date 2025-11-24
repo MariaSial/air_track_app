@@ -1,9 +1,7 @@
-// lib/view/reports/reports_view.dart
 import 'package:air_track_app/providers/reports_provider.dart';
 import 'package:air_track_app/view/report_status/details_report_view.dart';
 import 'package:air_track_app/widgets/Aqi_Analytics/aqi_app_bar.dart';
 import 'package:air_track_app/widgets/Aqi_Analytics/aqi_bottom_nav_bar.dart';
-import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:air_track_app/widgets/app_scaffold.dart';
 import 'package:air_track_app/widgets/reports/report_card.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +10,40 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ReportsView extends ConsumerWidget {
   const ReportsView({super.key});
 
-  // IMPORTANT: Set this to your machine's IP when testing on real device
-  // Example: '192.168.1.10:8000' or 'abcd.ngrok.io' (without http://)
-  static const String? kHostOverride =
-      null; // <-- CHANGE THIS for real device testing
+  // Set this to your machine's LAN IP and port (reachable from device),
+  // or null to default to emulator mapping (10.0.2.2).
+  static const String? kHostOverride = 'testproject.famzhost.com/api/v1';
+
+  // static const String? kHostOverride = null;
+
+  String _fixHost(String url) {
+    if (url.isEmpty) return url;
+    try {
+      final u = Uri.parse(url);
+      final host = u.host.toLowerCase();
+      final isLocal =
+          host == 'localhost' || host == '127.0.0.1' || host == '::1';
+
+      if (!isLocal) return url;
+
+      final scheme = (u.scheme.isEmpty ? 'http' : u.scheme);
+      final pathAndQuery = '${u.path}${u.hasQuery ? '?${u.query}' : ''}';
+
+      if (kHostOverride != null && kHostOverride!.isNotEmpty) {
+        // hostOverride likely includes port (e.g. 192.168.1.10:8000)
+        return '$scheme://$kHostOverride$pathAndQuery';
+      }
+
+      // default mapping for Android emulator -> host machine
+      return '$scheme://10.0.2.2$pathAndQuery';
+    } catch (e) {
+      // If parsing fails, try simple replace
+      if (kHostOverride != null && kHostOverride!.isNotEmpty) {
+        return url.replaceAll('localhost', kHostOverride!);
+      }
+      return url.replaceAll('localhost', '10.0.2.2');
+    }
+  }
 
   String _extractImageUrl(Map report) {
     print('🔍 Extracting image URL for report ID: ${report['id']}');
@@ -34,17 +62,19 @@ class ReportsView extends ConsumerWidget {
         // Try original_url first
         if (first['original_url'] is String &&
             (first['original_url'] as String).trim().isNotEmpty) {
-          final url = first['original_url'] as String;
-          print('  ✓ Using original_url: $url');
-          return url;
+          final url = (first['original_url'] as String).trim();
+          final fixed = _fixHost(url);
+          print('  ✓ Using original_url: $fixed');
+          return fixed;
         }
 
         // Fallback to other URL fields
         if (first['url'] is String &&
             (first['url'] as String).trim().isNotEmpty) {
-          final url = first['url'] as String;
-          print('  ✓ Using url: $url');
-          return url;
+          final url = (first['url'] as String).trim();
+          final fixed = _fixHost(url);
+          print('  ✓ Using url: $fixed');
+          return fixed;
         }
       }
     } else {
@@ -55,9 +85,10 @@ class ReportsView extends ConsumerWidget {
     if (report.containsKey('media_url') &&
         report['media_url'] is String &&
         (report['media_url'] as String).trim().isNotEmpty) {
-      final url = report['media_url'] as String;
-      print('✓ Using media_url: $url');
-      return url;
+      final url = (report['media_url'] as String).trim();
+      final fixed = _fixHost(url);
+      print('✓ Using media_url: $fixed');
+      return fixed;
     } else {
       print('✗ media_url is empty or null: ${report['media_url']}');
     }
@@ -69,9 +100,10 @@ class ReportsView extends ConsumerWidget {
       if (report.containsKey(k) &&
           report[k] is String &&
           (report[k] as String).trim().isNotEmpty) {
-        final url = report[k] as String;
-        print('✓ Using $k: $url');
-        return url;
+        final url = (report[k] as String).trim();
+        final fixed = _fixHost(url);
+        print('✓ Using $k: $fixed');
+        return fixed;
       }
     }
 
@@ -80,9 +112,10 @@ class ReportsView extends ConsumerWidget {
       final data = report['data'] as Map;
       if (data['media_url'] is String &&
           (data['media_url'] as String).trim().isNotEmpty) {
-        final url = data['media_url'] as String;
-        print('✓ Using data.media_url: $url');
-        return url;
+        final url = (data['media_url'] as String).trim();
+        final fixed = _fixHost(url);
+        print('✓ Using data.media_url: $fixed');
+        return fixed;
       }
     }
 

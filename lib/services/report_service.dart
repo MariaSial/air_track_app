@@ -8,8 +8,21 @@ import 'package:path/path.dart' as path;
 
 /// ReportService - submit reports as multipart/form-data and fetch media bytes
 class ReportService {
-  static const String baseUrl = 'https://testproject.famzhost.com';
-  static const String submitUrl = '$baseUrl/add-reports';
+  // Public host (what the device can reach). Use your real domain here.
+  static const String host = 'testproject.famzhost.com';
+  static const String scheme = 'https'; // keep as 'https' if your site uses TLS
+  static String get baseHost => '$scheme://$host';
+  static const String apiPrefix = '/api/v1';
+  static String get apiBase => '$baseHost$apiPrefix';
+
+  // Submit candidates - keep the ones likely to exist (you mentioned my-reports / all-reports)
+  static final List<String> _submitCandidates = [
+    '$apiBase/add-reports',
+    '$apiBase/add-report',
+    '$apiBase/my-reports',
+    '$apiBase/all-reports',
+    '$apiBase/reports',
+  ];
 
   /// Submit report as multipart/form-data (NOT JSON)
   static Future<Map<String, dynamic>> submitReport({
@@ -31,175 +44,140 @@ class ReportService {
       throw HttpException('User not authenticated');
     }
 
-    print('✓ Auth token: ${token.substring(0, 20)}...');
+    print('✓ Auth token available');
 
-    final uri = Uri.parse(submitUrl);
-    print('✓ Endpoint: $uri');
+    Future<http.Response> _sendTo(Uri uri, String fileFieldName) async {
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+      // Attach fields
+      request.fields['title'] = title;
+      request.fields['description'] = description;
+      request.fields['location'] = location;
+      request.fields['pollution_type'] = pollutionType;
+      if (lat != null) request.fields['lat'] = lat.toString();
+      if (lng != null) request.fields['long'] = lng.toString();
 
-    // Create multipart request
-    final request = http.MultipartRequest('POST', uri);
-
-    // Set headers
-    request.headers['Authorization'] = 'Bearer $token';
-    request.headers['Accept'] = 'application/json';
-    // NOTE: Do NOT set Content-Type manually, http package handles it for multipart
-
-    print('✓ Headers set');
-
-    // Add form fields (as strings, NOT JSON)
-    request.fields['title'] = title;
-    request.fields['description'] = description;
-    request.fields['location'] = location;
-    request.fields['pollution_type'] = pollutionType;
-
-    print('✓ Form fields:');
-    print('  - title: $title');
-    print('  - description: ${description.length} chars');
-    print('  - location: $location');
-    print('  - pollution_type: $pollutionType');
-
-    if (lat != null) {
-      request.fields['lat'] = lat.toString();
-      print('  - lat: $lat');
-    }
-    if (lng != null) {
-      request.fields['long'] = lng.toString();
-      print('  - long: $lng');
-    }
-
-    // Add image file if provided
-    if (photo != null) {
-      // Verify file exists
-      if (!await photo.exists()) {
-        print('  ❌ Image file does not exist at path: ${photo.path}');
-        throw HttpException('Image file not found');
-      }
-
-      final filename = path.basename(photo.path);
-      final fileSize = await photo.length();
-
-      print('✓ Adding image file:');
-      print('  - filename: $filename');
-      print('  - size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
-      print('  - path: ${photo.path}');
-      print('  - exists: ${await photo.exists()}');
-
-      try {
+      // Attach photo if provided
+      if (photo != null) {
+        if (!await photo.exists()) {
+          throw HttpException('Image file not found at ${photo.path}');
+        }
+        final filename = path.basename(photo.path);
         final multipartFile = await http.MultipartFile.fromPath(
-          'photo', // Reverted field name
+          fileFieldName,
           photo.path,
           filename: filename,
         );
-
         request.files.add(multipartFile);
-        print('  ✅ Image file added successfully');
-        print('  - Field name: photo');
-        print('  - Content-Type: ${multipartFile.contentType}');
-        print('  - Length: ${multipartFile.length} bytes');
-        print('  - Total files in request: ${request.files.length}');
-      } catch (e) {
-        print('  ❌ Failed to add image: $e');
-        throw HttpException('Failed to attach image: $e');
       }
-    } else {
-      print('ℹ️  No image provided');
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+      return response;
     }
 
-    print('📤 Sending request...');
+    final fileFieldCandidates = ['photo', 'image', 'file'];
 
-    try {
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      print('📥 ═══════════════════════════════════════');
-      print('📥 Response Received');
-      print('📥 ═══════════════════════════════════════');
-      print('Status: ${response.statusCode}');
-      print('Headers: ${response.headers}');
-      print('Body length: ${response.body.length}');
-      print('Body: ${response.body}');
-      print('═══════════════════════════════════════');
-
-      final bodyTrim = response.body.trim();
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        print('✅ Report submitted successfully!');
-
-        if (bodyTrim.isEmpty) {
-          return {'message': 'Report submitted successfully'};
-        }
-
+    for (final endpoint in _submitCandidates) {
+      for (final fileField in fileFieldCandidates) {
         try {
-          final decoded = json.decode(bodyTrim);
+          final uri = Uri.parse(endpoint);
+          print('📤 Attempting POST $uri (file field: $fileField)');
+          final response = await _sendTo(uri, fileField);
 
-          if (decoded is Map) {
-            print('✓ Response is a Map');
-            print('✓ Keys: ${decoded.keys.toList()}');
+          print('📥 Response from $uri');
+          print('Status: ${response.statusCode}');
+          print('Body length: ${response.body.length}');
+          print('Body: ${response.body}');
 
-            // Check if media was attached
-            if (decoded['media'] != null) {
-              print('✓ Media attached in response: ${decoded['media']}');
+          final bodyTrim = response.body.trim();
+
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            if (bodyTrim.isEmpty) {
+              return {'message': 'Report submitted successfully'};
             }
-            if (decoded['media_url'] != null) {
-              print('✓ Media URL: ${decoded['media_url']}');
+            try {
+              final decoded = json.decode(bodyTrim);
+              if (decoded is Map) return Map<String, dynamic>.from(decoded);
+              return {
+                'message': 'Report submitted successfully',
+                'data': decoded,
+              };
+            } catch (_) {
+              return {'message': bodyTrim};
             }
-
-            return Map<String, dynamic>.from(decoded);
           }
 
-          return {'message': 'Report submitted successfully', 'data': decoded};
-        } catch (e) {
-          print('⚠️  Response is not JSON: $e');
-          return {
-            'message': bodyTrim.isNotEmpty
-                ? bodyTrim
-                : 'Report submitted successfully',
-          };
-        }
-      }
+          if (response.statusCode == 404) {
+            print(
+              '❌ 404 from $uri (file field: $fileField). Trying next candidate...',
+            );
+            continue;
+          }
 
-      // Handle error responses
-      print('❌ Request failed with status: ${response.statusCode}');
-      String errorMsg = 'Request failed: ${response.statusCode}';
-
-      try {
-        if (bodyTrim.isNotEmpty) {
-          final decoded = json.decode(bodyTrim);
-
-          if (decoded is Map) {
-            if (decoded['message'] != null) {
-              errorMsg = decoded['message'].toString();
-            } else if (decoded['error'] != null) {
-              errorMsg = decoded['error'].toString();
-            } else if (decoded['errors'] != null) {
-              // Handle Laravel validation errors
-              final errors = decoded['errors'];
-              if (errors is Map) {
-                final allErrors = <String>[];
-                errors.forEach((key, value) {
-                  if (value is List) {
-                    allErrors.addAll(value.map((e) => e.toString()));
+          // Other non-success statuses -> parse message and throw
+          String errorMsg = 'Request failed: ${response.statusCode}';
+          if (bodyTrim.isNotEmpty) {
+            try {
+              final decoded = json.decode(bodyTrim);
+              if (decoded is Map) {
+                if (decoded['message'] != null)
+                  errorMsg = decoded['message'].toString();
+                else if (decoded['error'] != null)
+                  errorMsg = decoded['error'].toString();
+                else if (decoded['errors'] != null) {
+                  final errors = decoded['errors'];
+                  if (errors is Map) {
+                    final allErrors = <String>[];
+                    errors.forEach((k, v) {
+                      if (v is List)
+                        allErrors.addAll(v.map((e) => e.toString()));
+                      else
+                        allErrors.add(v.toString());
+                    });
+                    errorMsg = allErrors.join(', ');
                   } else {
-                    allErrors.add(value.toString());
+                    errorMsg = errors.toString();
                   }
-                });
-                errorMsg = allErrors.join(', ');
+                }
               } else {
-                errorMsg = errors.toString();
+                errorMsg = bodyTrim;
               }
+            } catch (_) {
+              errorMsg = bodyTrim;
             }
           }
+          throw HttpException(errorMsg);
+        } catch (e) {
+          print('⚠️  Attempt to $endpoint (field $fileField) failed: $e');
+          // continue trying other candidates
         }
-      } catch (e) {
-        print('⚠️  Could not parse error response: $e');
       }
-
-      print('Error message: $errorMsg');
-      throw HttpException(errorMsg);
-    } catch (e) {
-      print('❌ Exception during request: $e');
-      rethrow;
     }
+
+    throw HttpException(
+      'Failed to submit report: no valid endpoint responded.',
+    );
+  }
+
+  /// Replace localhost/127.0.0.1 in URLs with the real host so mobile devices can reach it.
+  static String rewriteLocalhost(String url) {
+    if (url == null || url.isEmpty) return url;
+    try {
+      final u = Uri.parse(url);
+      final hostLower = u.host.toLowerCase();
+      if (hostLower == 'localhost' ||
+          hostLower == '127.0.0.1' ||
+          hostLower == '::1') {
+        final usedScheme = u.scheme.isNotEmpty ? u.scheme : scheme;
+        final pathAndQuery = '${u.path}${u.hasQuery ? '?${u.query}' : ''}';
+        return '$usedScheme://$host$pathAndQuery';
+      }
+    } catch (_) {
+      // fallback simple replace
+      return url.replaceAll('localhost', host).replaceAll('127.0.0.1', host);
+    }
+    return url;
   }
 
   /// Try to fetch media bytes for a report
@@ -207,7 +185,7 @@ class ReportService {
     int? reportId,
     String? mediaUrl,
     String? filePath,
-    String? overrideHost,
+    String? overrideHost, // optional: if provided, used in place of `host`
   }) async {
     print('🖼️  Fetching media bytes...');
     print('  reportId: $reportId');
@@ -217,7 +195,6 @@ class ReportService {
     final token = await AuthStorage.getToken();
     if (token == null) throw HttpException('User not authenticated');
 
-    // Helper to do authenticated GET and return bytes if OK
     Future<Uint8List?> tryGetBytes(Uri uri) async {
       print('  Trying: $uri');
       try {
@@ -234,6 +211,8 @@ class ReportService {
             res.bodyBytes.isNotEmpty) {
           print('    ✅ Got ${res.bodyBytes.length} bytes');
           return res.bodyBytes;
+        } else {
+          print('    ✖️ Did not get bytes (status ${res.statusCode})');
         }
       } catch (e) {
         print('    ❌ Error: $e');
@@ -241,34 +220,42 @@ class ReportService {
       return null;
     }
 
-    // Rewrite host if override provided
-    String? rewrite(String? raw) {
-      if (raw == null) return null;
-      if (overrideHost == null) return raw;
-      try {
-        final u = Uri.parse(raw);
-        final scheme = (u.scheme.isEmpty ? 'http' : u.scheme);
-        return '$scheme://$overrideHost${u.path}${u.hasQuery ? '?${u.query}' : ''}';
-      } catch (_) {
-        return raw.replaceAll('localhost', overrideHost);
+    String rewrite(String? raw) {
+      if (raw == null) return '';
+      // If overrideHost is provided, replace host portion with it; otherwise rewrite localhost->host
+      if (overrideHost != null && overrideHost.isNotEmpty) {
+        try {
+          final u = Uri.parse(raw);
+          final schemeUsed = u.scheme.isNotEmpty ? u.scheme : scheme;
+          final pathAndQuery = '${u.path}${u.hasQuery ? '?${u.query}' : ''}';
+          // overrideHost may include port (e.g. 'example.com:8000')
+          return '$schemeUsed://$overrideHost$pathAndQuery';
+        } catch (_) {
+          return raw.replaceAll('localhost', overrideHost);
+        }
       }
+      return rewriteLocalhost(raw);
     }
 
     // 1) Try mediaUrl if provided
     if (mediaUrl != null && mediaUrl.trim().isNotEmpty) {
       final maybe = rewrite(mediaUrl);
       try {
-        final uri = Uri.parse(maybe!);
+        final uri = Uri.parse(maybe);
         final bytes = await tryGetBytes(uri);
         if (bytes != null) return bytes;
       } catch (_) {}
     }
 
-    // 2) Try filePath with common prefixes
+    // 2) Try filePath with common prefixes (serve paths usually outside api prefix)
     if (filePath != null && filePath.trim().isNotEmpty) {
-      final prefixes = ['$baseUrl/storage/', '$baseUrl/media/'];
+      final prefixes = [
+        '$baseHost/storage/',
+        '$baseHost/media/',
+        '$baseHost/uploads/',
+      ];
       for (final p in prefixes) {
-        final candidate = rewrite(p + filePath) ?? (p + filePath);
+        final candidate = rewrite(p + filePath);
         try {
           final uri = Uri.parse(candidate);
           final bytes = await tryGetBytes(uri);
@@ -277,15 +264,17 @@ class ReportService {
       }
     }
 
-    // 3) Try reportId media endpoints
+    // 3) Try reportId media endpoints (use my-reports / all-reports variants)
     if (reportId != null) {
       final candidates = [
-        '$baseUrl/api/v1/reports/$reportId/media',
-        '$baseUrl/storage/reports/$reportId',
-        '$baseUrl/media/$reportId',
+        '$apiBase/my-reports/$reportId/media',
+        '$apiBase/all-reports/$reportId/media',
+        '$apiBase/my-reports/$reportId',
+        '$apiBase/all-reports/$reportId',
+        '$baseHost/storage/reports/$reportId',
       ];
       for (final url in candidates) {
-        final candidate = rewrite(url) ?? url;
+        final candidate = rewrite(url);
         try {
           final uri = Uri.parse(candidate);
           final bytes = await tryGetBytes(uri);
@@ -294,21 +283,32 @@ class ReportService {
       }
     }
 
-    // 4) Last resort: fetch report and check for media URLs
+    // 4) Last resort: fetch report detail and look for media entries
     if (reportId != null) {
       try {
         final info = await getReportById(reportId);
 
-        // Check media array
         if (info['media'] is List && (info['media'] as List).isNotEmpty) {
           final m0 = (info['media'] as List).first;
-          if (m0 is Map && m0['original_url'] is String) {
-            final candidate =
-                rewrite(m0['original_url'] as String) ??
-                (m0['original_url'] as String);
-            final uri = Uri.parse(candidate);
-            final bytes = await tryGetBytes(uri);
-            if (bytes != null) return bytes;
+          if (m0 is Map) {
+            // try original_url then media_url then file_name
+            final candidates = <String>[];
+            if (m0['original_url'] is String)
+              candidates.add(m0['original_url'] as String);
+            if (m0['media_url'] is String)
+              candidates.add(m0['media_url'] as String);
+            if (m0['url'] is String) candidates.add(m0['url'] as String);
+            if (m0['file_name'] is String)
+              candidates.add(m0['file_name'] as String);
+
+            for (final c in candidates) {
+              final candidate = rewrite(c);
+              try {
+                final uri = Uri.parse(candidate);
+                final bytes = await tryGetBytes(uri);
+                if (bytes != null) return bytes;
+              } catch (_) {}
+            }
           }
         }
       } catch (e) {
@@ -324,10 +324,12 @@ class ReportService {
     final token = await AuthStorage.getToken();
     if (token == null) throw HttpException('User not authenticated');
 
+    // Try my-reports / all-reports endpoints
     final candidates = [
-      '$baseUrl/api/v1/reports/$id',
-      '$baseUrl/api/v1/my-reports/$id',
-      '$baseUrl/api/v1/report/$id',
+      '$apiBase/my-reports/$id',
+      '$apiBase/all-reports/$id',
+      '$apiBase/my-reports/$id?include=media',
+      '$apiBase/all-reports/$id?include=media',
     ];
 
     for (final url in candidates) {
@@ -339,14 +341,17 @@ class ReportService {
             'Authorization': 'Bearer $token',
           },
         );
+        print('getReportById trying $url -> ${res.statusCode}');
         if (res.statusCode >= 200 &&
             res.statusCode < 300 &&
             res.body.trim().isNotEmpty) {
           final decoded = json.decode(res.body.trim());
-          if (decoded is Map) return Map<String, dynamic>.from(decoded);
-          if (decoded is Map && decoded['data'] is Map) {
+          if (decoded is Map &&
+              decoded.containsKey('data') &&
+              decoded['data'] is Map) {
             return Map<String, dynamic>.from(decoded['data']);
           }
+          if (decoded is Map) return Map<String, dynamic>.from(decoded);
         }
       } catch (_) {}
     }
