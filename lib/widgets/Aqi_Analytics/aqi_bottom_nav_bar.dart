@@ -1,6 +1,8 @@
 // lib/widgets/aqi_bottom_nav_bar.dart
 import 'package:air_track_app/view/authentication/contactus_view.dart';
 import 'package:air_track_app/view/authentication/sign_in_view.dart';
+import 'package:air_track_app/view/home_view/main_home_screen.dart';
+
 import 'package:air_track_app/view/notifications/notification_view.dart';
 import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +21,7 @@ class AqiBottomNavBar extends StatelessWidget {
 
     switch (index) {
       case 0:
-        destination = const SignInView();
+        destination = const MainHomeScreen();
         break;
       case 1:
         destination = const AqiAnalyticsView();
@@ -31,7 +33,7 @@ class AqiBottomNavBar extends StatelessWidget {
         destination = const NotificationView();
         break;
       default:
-        destination = const SignInView();
+        destination = const MainHomeScreen();
     }
 
     // Replace the current route so the nav bar updates properly

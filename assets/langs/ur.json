@@ -1,0 +1,12 @@
+{
+  "language": "زبان",
+  "select_language": "اپنی پسند کی زبان منتخب کریں",
+  "theme": "تھیم",
+  "switch_theme": "ہلکی اور گہری موڈ کے درمیان سوئچ کریں",
+  "location_settings": "مقام کی ترتیبات",
+  "location_subtitle": "صحیح AQI اپ ڈیٹس کے لیے GPS آن کریں یا اپنا شہر منتخب کریں۔",
+  "report_preferences": "رپورٹ کی ترجیحات",
+  "report_subtitle": "یہ کنٹرول کریں کہ آپ کو آلودگی کی رپورٹس کب اور کیسے ملیں۔",
+  "privacy_permissions": "پرائیویسی اور اجازتیں",
+  "privacy_subtitle": "مقام کی رسائی کو کنٹرول کریں۔"
+}

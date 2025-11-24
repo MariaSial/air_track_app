@@ -1,6 +1,7 @@
-// sign_up_view_api.dart
+// lib/view/home_view/sign_up_view_api.dart
 import 'package:air_track_app/services/signin_service.dart';
 import 'package:air_track_app/services/signup_service.dart';
+import 'package:air_track_app/services/auth_storage.dart'; // <- added
 import 'package:air_track_app/widgets/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
@@ -109,10 +110,41 @@ class _SignUpViewState extends State<SignUpView> {
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
 
-      // If backend returns token you can save it here
-      // final token = resp['token'];
+      // Build a user map (prefer server-sent user object if available)
+      Map<String, dynamic> userMap = {
+        'name': name,
+        'email': email,
+        'city': city,
+        'phone': phone,
+        'cnic': cnic,
+      };
 
-      Navigator.pushReplacementNamed(context, AppRoutes.contactusview);
+      // If response contains a "user" object, prefer its fields (safe access)
+      try {
+        final serverUser = resp['user'];
+        if (serverUser is Map<String, dynamic>) {
+          userMap = {
+            'name': serverUser['name']?.toString() ?? userMap['name'],
+            'email': serverUser['email']?.toString() ?? userMap['email'],
+            'city': serverUser['city']?.toString() ?? userMap['city'],
+            'phone': serverUser['phone']?.toString() ?? userMap['phone'],
+            'cnic': serverUser['cnic']?.toString() ?? userMap['cnic'],
+          };
+        }
+      } catch (_) {
+        // ignore parsing error; use local input values
+      }
+
+      // If the API returned a token, save it as well
+      if (resp['token'] != null) {
+        await AuthStorage.saveToken(resp['token'].toString());
+      }
+
+      // Save user profile securely so profile screen can read it
+      await AuthStorage.saveUser(userMap);
+
+      // Navigate to desired screen (you used contactus previously)
+      Navigator.pushReplacementNamed(context, AppRoutes.mainhomeview);
     } on ApiException catch (e) {
       // 👇 Custom handling for common cases
       String displayMessage = e.message;

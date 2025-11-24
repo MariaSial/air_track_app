@@ -3,6 +3,7 @@ import 'package:air_track_app/view/authentication/contactus_view.dart';
 import 'package:air_track_app/view/authentication/forgot_password_view.dart';
 import 'package:air_track_app/view/authentication/sign_in_view.dart';
 import 'package:air_track_app/view/authentication/sign_up_view.dart';
+import 'package:air_track_app/view/home_view/main_home_screen.dart';
 import 'package:air_track_app/view/splash/onboarding_view.dart';
 import 'package:air_track_app/view/splash/splash_view.dart';
 import 'package:air_track_app/view/notifications/notification_view.dart';
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String aqianalyticsview = "/aqianalyticsview";
   static const String reportsview = "/reportsview";
   static const String notificationview = "/notificationview";
+  static const String mainhomeview = "/mainhomeview";
 }
 
 class RouteGenerator {
@@ -42,6 +44,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => ReportsView());
       case AppRoutes.notificationview:
         return MaterialPageRoute(builder: (_) => NotificationView());
+      case AppRoutes.mainhomeview:
+        return MaterialPageRoute(builder: (_) => MainHomeScreen());
       default:
         return MaterialPageRoute(
           builder: (_) =>

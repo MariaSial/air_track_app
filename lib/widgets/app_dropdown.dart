@@ -23,7 +23,7 @@ class _AppDropdownState extends State<AppDropdown> {
   Widget build(BuildContext context) {
     return DropdownButtonHideUnderline(
       child: SizedBox(
-        width: 140, // ✅ adjust this — match your TextField width (e.g. 140–200)
+        width: 160, // ✅ adjust this — match your TextField width (e.g. 140–200)
         child: DropdownButton<String>(
           value: selectedValue,
           isExpanded: true, // ✅ makes dropdown take full width of SizedBox

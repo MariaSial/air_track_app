@@ -55,7 +55,7 @@ class _SplashViewState extends State<SplashView> {
     // Decide route: if token exists -> go to home, else onboarding or sign-in
     if (!mounted) return;
     if (token != null && token.isNotEmpty) {
-      Navigator.pushReplacementNamed(context, AppRoutes.aqianalyticsview);
+      Navigator.pushReplacementNamed(context, AppRoutes.mainhomeview);
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
     }

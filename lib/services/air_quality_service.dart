@@ -24,6 +24,16 @@ class AirQualityService {
     }
   }
 
+  Future<String?> getLocationName(double lat, double lon) async {
+    try {
+      final results = await searchLocations('$lat,$lon');
+      if (results.isNotEmpty) return results[0]['name'];
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Get air quality data for specific coordinates from your custom API (Today/Daily)
   Future<AirQualityModel?> getAirQuality(double lat, double lon) async {
     try {

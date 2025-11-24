@@ -66,7 +66,7 @@ class _HistoricalViewState extends State<HistoricalView> {
         _isSearching = false;
       });
     } catch (e) {
-      print('Error searching: $e');
+      debugPrint('Error searching: $e');
       setState(() {
         _isSearching = false;
         _showSearchResults = false;
@@ -76,7 +76,7 @@ class _HistoricalViewState extends State<HistoricalView> {
 
   void _selectLocation(Map<String, dynamic> location) {
     final displayName =
-        location['state'] != null && location['state'].isNotEmpty
+        location['state'] != null && (location['state'] as String).isNotEmpty
         ? '${location['name']}, ${location['state']}, Pakistan'
         : '${location['name']}, Pakistan';
 
@@ -85,7 +85,9 @@ class _HistoricalViewState extends State<HistoricalView> {
       _showSearchResults = false;
     });
 
-    widget.onLocationSelected(location['lat'], location['lon'], displayName);
+    final lat = (location['lat'] as num).toDouble();
+    final lon = (location['lon'] as num).toDouble();
+    widget.onLocationSelected(lat, lon, displayName);
   }
 
   @override
@@ -107,7 +109,7 @@ class _HistoricalViewState extends State<HistoricalView> {
               AppTextField(
                 controller: widget.searchController,
                 hintText: "Search",
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 onChanged: _searchLocations,
                 suffixIcon: widget.searchController.text.isNotEmpty
                     ? IconButton(
@@ -126,7 +128,7 @@ class _HistoricalViewState extends State<HistoricalView> {
               // Search Results Dropdown
               if (_showSearchResults)
                 Container(
-                  margin: EdgeInsets.only(top: 8),
+                  margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
                     color: white,
                     borderRadius: BorderRadius.circular(8),
@@ -135,14 +137,14 @@ class _HistoricalViewState extends State<HistoricalView> {
                       BoxShadow(
                         color: black.withValues(alpha: 0.1),
                         blurRadius: 4,
-                        offset: Offset(0, 2),
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  constraints: BoxConstraints(maxHeight: 250),
+                  constraints: const BoxConstraints(maxHeight: 250),
                   child: _searchResults.isEmpty
                       ? Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Text(
                             'No locations found in Pakistan',
                             style: TextStyle(color: grey),
@@ -157,7 +159,7 @@ class _HistoricalViewState extends State<HistoricalView> {
                             final result = _searchResults[index];
                             final subtitle =
                                 result['state'] != null &&
-                                    result['state'].isNotEmpty
+                                    (result['state'] as String).isNotEmpty
                                 ? '${result['state']}, Pakistan'
                                 : 'Pakistan';
 
@@ -180,7 +182,7 @@ class _HistoricalViewState extends State<HistoricalView> {
 
               // Show loading indicator while searching
               if (_isSearching)
-                Padding(
+                const Padding(
                   padding: EdgeInsets.only(top: 8),
                   child: LinearProgressIndicator(),
                 ),
@@ -194,7 +196,7 @@ class _HistoricalViewState extends State<HistoricalView> {
             margin: EdgeInsets.only(
               left: MediaQuery.sizeOf(context).width * 0.55,
             ),
-            padding: EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: grey,
               borderRadius: BorderRadius.circular(8),
@@ -203,8 +205,8 @@ class _HistoricalViewState extends State<HistoricalView> {
               child: DropdownButton<String>(
                 value: widget.selectedTimePeriod,
                 dropdownColor: darkgrey,
-                icon: Icon(Icons.arrow_drop_down, color: white),
-                style: TextStyle(fontSize: 14, color: white),
+                icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                style: const TextStyle(fontSize: 14, color: Colors.white),
                 items: widget.timePeriods.map((String period) {
                   final bool isSelected = widget.selectedTimePeriod == period;
                   return DropdownMenuItem<String>(
@@ -363,19 +365,19 @@ class _HistoricalViewState extends State<HistoricalView> {
                       ),
                     ],
                     rows: dailyData.map((dayData) {
-                      DateTime date = dayData['dateTime'];
-                      int aqi = dayData['aqiValue'];
+                      DateTime date = dayData['dateTime'] as DateTime;
+                      int aqi = dayData['aqiValue'] as int;
                       return DataRow(
                         cells: [
                           DataCell(
                             Text(
                               '${date.day}/${date.month}/${date.year}',
-                              style: TextStyle(fontSize: 13),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Container(
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                                 vertical: 4,
                               ),
@@ -399,50 +401,50 @@ class _HistoricalViewState extends State<HistoricalView> {
                           ),
                           DataCell(
                             Text(
-                              dayData['pm2_5'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['pm2_5'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Text(
-                              dayData['pm10'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['pm10'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Text(
-                              dayData['no2'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['no2'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Text(
-                              dayData['so2'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['so2'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Text(
-                              dayData['co'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['co'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Text(
-                              dayData['o3'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['o3'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Text(
-                              dayData['nh3'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['nh3'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                           DataCell(
                             Text(
-                              dayData['no'].toStringAsFixed(1),
-                              style: TextStyle(fontSize: 13),
+                              (dayData['no'] as double).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
                         ],
@@ -459,7 +461,7 @@ class _HistoricalViewState extends State<HistoricalView> {
   }
 }
 
-// Daily averages calculator
+/// Daily averages calculator
 class DailyAveragesCalculator {
   static Map<String, List<dynamic>> groupDataByDay(
     AirQualityModel airQualityData,
@@ -467,12 +469,12 @@ class DailyAveragesCalculator {
     Map<String, List<dynamic>> groupedData = {};
 
     for (var data in airQualityData.list) {
+      // use the local date components to build the key
+      final localDt = data.dateTime.toLocal();
       String dateKey =
-          '${data.dateTime.year}-${data.dateTime.month.toString().padLeft(2, '0')}-${data.dateTime.day.toString().padLeft(2, '0')}';
+          '${localDt.year}-${localDt.month.toString().padLeft(2, '0')}-${localDt.day.toString().padLeft(2, '0')}';
 
-      if (!groupedData.containsKey(dateKey)) {
-        groupedData[dateKey] = [];
-      }
+      groupedData.putIfAbsent(dateKey, () => []);
       groupedData[dateKey]!.add(data);
     }
 
@@ -486,47 +488,75 @@ class DailyAveragesCalculator {
     var groupedData = groupDataByDay(airQualityData);
     List<Map<String, dynamic>> dailyAverages = [];
 
+    // today's key for comparison (local)
+    final now = DateTime.now().toLocal();
+    final String todayKey =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
     groupedData.forEach((dateKey, dataList) {
-      double avgPm25 = 0,
-          avgPm10 = 0,
-          avgNo2 = 0,
-          avgSo2 = 0,
-          avgCo = 0,
-          avgNh3 = 0,
-          avgNo = 0,
-          avgO3 = 0;
+      // find the latest reading for the day (by timestamp)
+      var latestItem = dataList.reduce(
+        (a, b) => (a.dateTime.toLocal().isAfter(b.dateTime.toLocal())) ? a : b,
+      );
+
+      // accumulate pollutant sums
+      double sumPm25 = 0,
+          sumPm10 = 0,
+          sumNo2 = 0,
+          sumSo2 = 0,
+          sumCo = 0,
+          sumNh3 = 0,
+          sumNo = 0,
+          sumO3 = 0;
       double totalAqi = 0;
 
       for (var data in dataList) {
         totalAqi += data.getEpaAqi();
-        avgPm25 += data.components.pm2_5;
-        avgPm10 += data.components.pm10;
-        avgNo2 += data.components.no2;
-        avgSo2 += data.components.so2;
-        avgCo += data.components.co;
-        avgNh3 += data.components.nh3;
-        avgNo += data.components.no;
-        avgO3 += data.components.o3;
+        sumPm25 += data.components.pm2_5;
+        sumPm10 += data.components.pm10;
+        sumNo2 += data.components.no2;
+        sumSo2 += data.components.so2;
+        sumCo += data.components.co;
+        sumNh3 += data.components.nh3;
+        sumNo += data.components.no;
+        sumO3 += data.components.o3;
       }
 
       int count = dataList.length;
 
+      // For the *current day* use the latest reading's EPA AQI (so it matches Today view)
+      int aqiValue;
+      DateTime dateTimeForRow;
+      if (dateKey == todayKey) {
+        aqiValue = latestItem.getEpaAqi();
+        dateTimeForRow = latestItem.dateTime.toLocal();
+      } else {
+        aqiValue = (totalAqi / count).round();
+        // use latest timestamp of that day for display consistency
+        dateTimeForRow = latestItem.dateTime.toLocal();
+      }
+
       dailyAverages.add({
-        'dateTime': dataList.first.dateTime,
-        'aqiValue': (totalAqi / count).round(),
-        'pm2_5': avgPm25 / count,
-        'pm10': avgPm10 / count,
-        'no2': avgNo2 / count,
-        'so2': avgSo2 / count,
-        'co': avgCo / count,
-        'nh3': avgNh3 / count,
-        'no': avgNo / count,
-        'o3': avgO3 / count,
+        'dateTime': dateTimeForRow,
+        'aqiValue': aqiValue,
+        'pm2_5': sumPm25 / count,
+        'pm10': sumPm10 / count,
+        'no2': sumNo2 / count,
+        'so2': sumSo2 / count,
+        'co': sumCo / count,
+        'nh3': sumNh3 / count,
+        'no': sumNo / count,
+        'o3': sumO3 / count,
       });
     });
 
-    dailyAverages.sort((a, b) => b['dateTime'].compareTo(a['dateTime']));
+    // sort descending (most recent first)
+    dailyAverages.sort(
+      (a, b) =>
+          (b['dateTime'] as DateTime).compareTo(a['dateTime'] as DateTime),
+    );
 
+    // limit days shown depending on period
     int daysToShow = timePeriod == 'Weekly' ? 7 : 30;
     if (dailyAverages.length > daysToShow) {
       dailyAverages = dailyAverages.sublist(0, daysToShow);

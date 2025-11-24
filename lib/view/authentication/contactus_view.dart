@@ -70,7 +70,7 @@ class _ContactusViewState extends State<ContactusView> {
         SnackBar(content: Text(resultMessage), backgroundColor: green),
       );
       await Future.delayed(const Duration(milliseconds: 500));
-      Navigator.pushReplacementNamed(context, AppRoutes.aqianalyticsview);
+      Navigator.pushReplacementNamed(context, AppRoutes.mainhomeview);
       nameController.clear();
       emailController.clear();
       msgController.clear();

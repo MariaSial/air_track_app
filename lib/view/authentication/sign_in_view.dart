@@ -1,3 +1,4 @@
+// lib/view/home_view/sign_in_view.dart
 import 'package:air_track_app/services/auth_storage.dart';
 import 'package:air_track_app/services/signin_service.dart';
 import 'package:air_track_app/widgets/app_colors.dart';
@@ -11,6 +12,7 @@ import 'package:air_track_app/widgets/app_text_field.dart';
 import 'package:air_track_app/widgets/blue_button.dart';
 import 'package:air_track_app/widgets/white_text_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -45,6 +47,15 @@ class _SignInViewState extends State<SignInView> {
     super.dispose();
   }
 
+  // Debug helper to print all secure storage values
+  Future<void> _debugDumpSecureStorage() async {
+    final s = const FlutterSecureStorage();
+    final all = await s.readAll();
+    print('--- SecureStorage dump ---');
+    all.forEach((k, v) => print('$k => $v'));
+    print('--- end dump ---');
+  }
+
   Future<void> _signInWithEmailAndPassword() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
@@ -54,63 +65,66 @@ class _SignInViewState extends State<SignInView> {
     setState(() => isLoading = true);
 
     try {
-      // Call API login endpoint
+      // 1) Login -> returns token and may also save user if server included it
       final token = await _api.loginWithEmail(email, password);
-      // ✅ Save token once after login
+
+      // 2) Ensure token is saved (SigninApiService already saves it, but safe to call again)
       await AuthStorage.saveToken(token);
 
+      // 3) mark logged-in in prefs (optional)
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('token', token);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('✅ Sign in successful!'),
-            // backgroundColor: white,
-          ),
-        );
+      // 4) If server didn't return user in login response, try to fetch profile endpoint.
+      //    This will save user to AuthStorage via fetchProfile().
+      try {
+        await _api.fetchProfile(token);
+      } catch (e) {
+        // non-fatal — we continue navigation but profile screen might show '-' until user data saved.
+        print('⚠️ fetchProfile failed after login: $e');
+      }
 
-        await Future.delayed(const Duration(milliseconds: 500));
-        Navigator.pushReplacementNamed(context, AppRoutes.aqianalyticsview);
+      // Optional: debug dump (uncomment to inspect secure storage in console)
+      // await _debugDumpSecureStorage();
+
+      // 5) Navigate after all saves done
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('✅ Sign in successful!')));
+
+        await Future.delayed(const Duration(milliseconds: 350));
+        Navigator.pushReplacementNamed(context, AppRoutes.mainhomeview);
       }
     } on ApiException catch (e) {
-      // DEBUG: Print to console
-      print('🔴 ApiException caught!');
-      print('🔴 Status Code: ${e.statusCode}');
-      print('🔴 Message: ${e.message}');
+      print(
+        '🔴 ApiException caught! status: ${e.statusCode} msg: ${e.message}',
+      );
 
       if (mounted) {
         String displayMessage = e.message;
 
-        // Force custom messages based on status code
         if (e.statusCode == 401) {
           displayMessage = 'Incorrect email or password';
-          print('🔴 Changed to: $displayMessage');
         } else if (e.statusCode == 404) {
           displayMessage = 'No account found with this email';
-          print('🔴 Changed to: $displayMessage');
         }
-
-        print('🔴 Final message: $displayMessage');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ $displayMessage'),
-            // backgroundColor: white,
             duration: const Duration(seconds: 4),
           ),
         );
       }
     } catch (e) {
-      print('🔴 Generic Exception caught: ${e.runtimeType}');
-      print('🔴 Exception: $e');
+      print('🔴 Generic Exception caught: ${e.runtimeType} -> $e');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ An unexpected error occurred: ${e.toString()}'),
-            // backgroundColor: white,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -137,7 +151,7 @@ class _SignInViewState extends State<SignInView> {
                   Text(signin, style: blueButtonStyle.copyWith(color: black)),
                   const SizedBox(height: 20),
 
-                  // 📧 Email field
+                  // Email
                   AppTextField(
                     controller: emailController,
                     hintText: "Email",
@@ -154,7 +168,7 @@ class _SignInViewState extends State<SignInView> {
                     },
                   ),
 
-                  // 🔑 Password field
+                  // Password
                   AppTextField(
                     controller: passwordController,
                     hintText: "Password",
@@ -191,7 +205,7 @@ class _SignInViewState extends State<SignInView> {
 
                   const SizedBox(height: 12),
 
-                  // Sign Up
+                  // Sign Up Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

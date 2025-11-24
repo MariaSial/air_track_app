@@ -1,0 +1,14 @@
+{
+ 
+  "language": "Language",
+  "select_language": "Select your preferred understanding",
+  "theme": "Theme",
+  "switch_theme": "Switch between light and dark mode",
+  "location_settings": "Location Settings",
+  "location_subtitle": "Turn on GPS or choose your city to get accurate AQI updates.",
+  "report_preferences": "Report Preferences",
+  "report_subtitle": "Manage how and when you receive updates about pollution reports.",
+  "privacy_permissions": "Privacy and Permissions",
+  "privacy_subtitle": "Control location access."
+}
+

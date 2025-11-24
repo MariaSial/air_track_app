@@ -5,7 +5,6 @@ import 'package:air_track_app/widgets/Aqi_Analytics/aqi_pollutant.dart';
 import 'package:air_track_app/widgets/Aqi_Analytics/aqi_status_message.dart';
 import 'package:air_track_app/widgets/Aqi_Analytics/location_helper.dart';
 import 'package:air_track_app/widgets/app_colors.dart';
-import 'package:air_track_app/widgets/app_routes.dart';
 import 'package:air_track_app/widgets/app_text_field.dart';
 import 'package:air_track_app/widgets/white_text_button.dart';
 import 'package:flutter/material.dart';
@@ -63,7 +62,7 @@ class _DailyViewState extends State<DailyView> {
         _isSearching = false;
       });
     } catch (e) {
-      print('Error searching: $e');
+      debugPrint('Error searching: $e');
       setState(() {
         _isSearching = false;
         _showSearchResults = false;
@@ -73,7 +72,7 @@ class _DailyViewState extends State<DailyView> {
 
   void _selectLocation(Map<String, dynamic> location) {
     final displayName =
-        location['state'] != null && location['state'].isNotEmpty
+        location['state'] != null && (location['state'] as String).isNotEmpty
         ? '${location['name']}, ${location['state']}, Pakistan'
         : '${location['name']}, Pakistan';
 
@@ -82,14 +81,20 @@ class _DailyViewState extends State<DailyView> {
       _showSearchResults = false;
     });
 
-    widget.onLocationSelected(location['lat'], location['lon'], displayName);
+    final lat = (location['lat'] as num).toDouble();
+    final lon = (location['lon'] as num).toDouble();
+    widget.onLocationSelected(lat, lon, displayName);
   }
 
   @override
   Widget build(BuildContext context) {
-    final aqiData = widget.airQualityData.list.first;
-    final epaAqi = aqiData.getEpaAqi();
-    final components = aqiData.components;
+    // aqiItem is the actual data item from the model (it should contain date/time and components)
+    final aqiItem = widget.airQualityData.list.first;
+    // epaAqi is the integer EPA AQI derived consistently from the model item
+    final int epaAqi = aqiItem.getEpaAqi();
+    // aqiInfo is the helper object containing label & color for that epaAqi
+    final AQIData aqiInfo = AQIData.getAQIData(epaAqi);
+    final components = aqiItem.components;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -102,7 +107,7 @@ class _DailyViewState extends State<DailyView> {
               AppTextField(
                 controller: widget.searchController,
                 hintText: "Search ",
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 onChanged: _searchLocations,
                 suffixIcon: widget.searchController.text.isNotEmpty
                     ? IconButton(
@@ -121,7 +126,7 @@ class _DailyViewState extends State<DailyView> {
               // Search Results Dropdown
               if (_showSearchResults)
                 Container(
-                  margin: EdgeInsets.only(top: 8),
+                  margin: const EdgeInsets.only(top: 8),
                   decoration: BoxDecoration(
                     color: white,
                     borderRadius: BorderRadius.circular(8),
@@ -130,14 +135,14 @@ class _DailyViewState extends State<DailyView> {
                       BoxShadow(
                         color: black.withValues(alpha: 0.1),
                         blurRadius: 4,
-                        offset: Offset(0, 2),
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  constraints: BoxConstraints(maxHeight: 250),
+                  constraints: const BoxConstraints(maxHeight: 250),
                   child: _searchResults.isEmpty
                       ? Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Text(
                             'No locations found in Pakistan',
                             style: TextStyle(color: grey),
@@ -152,7 +157,7 @@ class _DailyViewState extends State<DailyView> {
                             final result = _searchResults[index];
                             final subtitle =
                                 result['state'] != null &&
-                                    result['state'].isNotEmpty
+                                    (result['state'] as String).isNotEmpty
                                 ? '${result['state']}, Pakistan'
                                 : 'Pakistan';
 
@@ -175,7 +180,7 @@ class _DailyViewState extends State<DailyView> {
 
               // Show loading indicator while searching
               if (_isSearching)
-                Padding(
+                const Padding(
                   padding: EdgeInsets.only(top: 8),
                   child: LinearProgressIndicator(),
                 ),
@@ -189,7 +194,7 @@ class _DailyViewState extends State<DailyView> {
             margin: EdgeInsets.only(
               left: MediaQuery.sizeOf(context).width * 0.55,
             ),
-            padding: EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
               color: grey,
               borderRadius: BorderRadius.circular(8),
@@ -198,8 +203,8 @@ class _DailyViewState extends State<DailyView> {
               child: DropdownButton<String>(
                 value: widget.selectedTimePeriod,
                 dropdownColor: darkgrey,
-                icon: Icon(Icons.arrow_drop_down, color: white),
-                style: TextStyle(fontSize: 14, color: white),
+                icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                style: const TextStyle(fontSize: 14, color: Colors.white),
                 items: widget.timePeriods.map((String period) {
                   final bool isSelected = widget.selectedTimePeriod == period;
                   return DropdownMenuItem<String>(
@@ -220,7 +225,7 @@ class _DailyViewState extends State<DailyView> {
 
           const SizedBox(height: 16),
 
-          // AQI Card
+          // AQI Card - pass the unified epaAqi so both screens show identical value
           AqiCard(aqiValue: epaAqi, locationName: widget.locationName),
 
           const SizedBox(height: 24),
@@ -247,7 +252,8 @@ class _DailyViewState extends State<DailyView> {
           // Last Updated Time
           Center(
             child: Text(
-              'Last updated: ${DateFormatter.formatDateTime(aqiData.dateTime)}',
+              // Use the actual timestamp from the model item
+              'Last updated: ${DateFormatter.formatDateTime(aqiItem.dateTime)}',
               style: TextStyle(
                 fontSize: 12,
                 color: grey,

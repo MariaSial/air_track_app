@@ -24,7 +24,41 @@ String veryUnhealthy =
     "Health warnings for all. Avoid outdoor activities; stay indoors with clean air and keep windows closed.";
 String hazardous =
     "Emergency conditions. Avoid going outside. Use air purifiers and wear N95 masks if outdoor exposure is unavoidable.";
+List<String> categorieslist = [
+  'PowerPlants(Coal, Gas, Oil)',
 
+  "Industrial Manufacturing",
+
+  "Industrial Furnaces and Boilers",
+
+  'Road Vehicles (Cars, Trucks, Buses)',
+
+  "Off-Road Mobile Sources (Trains, Ships, Construction)",
+
+  "Non-Exhaust Vehicle Emissions (Tires, Brakes)",
+
+  "Residential Heating and Cooking",
+
+  "Agricultural Burning (Crop Residue)",
+
+  "Open Waste Burning",
+
+  "Construction and Demolition Dust",
+
+  "Solvent Use and Evaporation",
+
+  "Dust Storms",
+
+  "Wildfires and Forest Fires",
+
+  "Volcanic Activity",
+
+  "Temperature Inversions (Trapping Factor)",
+
+  "Calm Wind Conditions (Trapping Factor)",
+
+  "Intense Sunlight (Ozone Formation Factor)",
+];
 List<String> cities = [
   'Peshawar',
   'Abbottabad',
